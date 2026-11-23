@@ -257,16 +257,18 @@ async function main() {
         })(),
       );
     });
-    const askTool = [...planned, user("list files")];
+    const biliStatus = (ref: string) => `[ACP status: highest allocated ref ${ref} — refs above it are not minted yet, never guess them; compressible now: m00001–m00002 (1.0K); the newest messages stay protected. Use these refs directly; acp_status only if you need the full list.]`;
+    const askTool = [...planned, user(`list files\n\n${biliStatus("m00335")}`)];
     const forksBeforeTool = forks.length;
     const parked = await post("chat", { tools: [bashTool], messages: askTool });
     const call = ((await parked.json()) as any).choices[0].message.tool_calls[0];
     assert.equal(seen!.resume, session);
+    assert.ok((await promptText(seen!.prompt)).includes(biliStatus("m00335")), "model still receives status metadata");
     assert.equal(forks.length, forksBeforeTool);
     const spawnsBefore = spawns;
     append(session, "L7-result", "L7");
     const toolStep = [
-      ...askTool,
+      ...planned, user(`list files\n\n${biliStatus("m00339")}`),
       { role: "assistant", content: null, tool_calls: [call] },
       { role: "tool", tool_call_id: call.id, content: "a.txt" },
       user("also count them"),

@@ -401,6 +401,15 @@ export function extractTextContent(content: unknown): string {
 
 const SYSTEM_REMINDER_BLOCK = /<system-reminder>[\s\S]*?<\/system-reminder>/g;
 
+// Bili appends this changing, synthetic footer to the latest user message.
+// Exclude only its known grammar from edit detection, not from model input.
+// Anchoring to a complete final line avoids swallowing quoted or inline prose.
+const BILI_STATUS_FOOTER = new RegExp(
+  String.raw`(?:^|\r?\n)[\t ]*\[ACP status: highest allocated ref (?:m\d{5,}|none) — refs above it are not minted yet, never guess them; compressible now: ` +
+  String.raw`m\d{5,}–m\d{5,} \(\d+(?:\.\d+)?K?\)(?:, m\d{5,}–m\d{5,} \(\d+(?:\.\d+)?K?\))*(?:, \+\d+ more)?; ` +
+  String.raw`the newest messages stay protected\. Use these refs directly; acp_status only if you need the full list\.\][\t \r\n]*$`,
+);
+
 /**
  * One short hash per user message of a conversation, in order: the
  * conversation's shape as far as revert/edit detection needs it.
@@ -411,7 +420,8 @@ const SYSTEM_REMINDER_BLOCK = /<system-reminder>[\s\S]*?<\/system-reminder>/g;
  * not stable across requests: OpenCode's promoted tool media, and
  * <system-reminder> messages. Plan mode splices its reminder in before the
  * user's prompt when sending, but stores it after, so its position moves
- * between requests. Reminder blocks inside other messages are dropped too.
+ * between requests. Reminder blocks inside other messages and Bili's transient
+ * ACP status footer are dropped from identity too (not from model messages).
  * Attachments count by presence only; their encoding may change.
  */
 export function userHistoryFingerprints(
@@ -442,6 +452,7 @@ function fingerprintedUserMessages(
     if (msg?.role !== "user" || isSyntheticToolMediaMessage(msg, messages[i - 1])) continue;
     const text = extractTextContent(msg.content)
       .replace(SYSTEM_REMINDER_BLOCK, " ")
+      .replace(BILI_STATUS_FOOTER, " ")
       .replace(/\s+/g, " ")
       .trim();
     const identity = text || (contentHasAttachments(msg.content) ? "\u0000attachments" : "");
