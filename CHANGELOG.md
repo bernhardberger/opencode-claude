@@ -5,6 +5,7 @@
 First release of the maintained fork, published as
 `@bernhardberger/opencode-claude`. Replace `@openchamber/opencode-claude` with
 it in `plugins`; the provider and model IDs are unchanged.
+Releases are staged by CI and go live only after maintainer approval with 2FA.
 
 - **Billion Context status footer no longer restarts the Claude session**:
   Billion Context appends a status line to your latest message, and it changes
