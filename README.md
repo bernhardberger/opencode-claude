@@ -17,6 +17,18 @@ The plugin adds a **Claude Code** provider. Pick Opus, Fable, Sonnet or Haiku in
 
 This is an independent community project. It isn't affiliated with, endorsed by, or supported by Anthropic. Claude and Claude Code are trademarks of Anthropic.
 
+> **Setting this up with a coding agent?** Point it at [docs/agents.md](docs/agents.md). The page has step-by-step instructions, checks and rules written for agents.
+
+## Why this fork exists
+
+OpenChamber archived `@openchamber/opencode-claude` once OpenCode shipped its own Claude Code provider. For many setups, the built-in provider is the right choice. Ours wasn't ready to move yet, for three reasons (as of OpenCode 2.4.0 and Billion Context 0.1.216):
+
+- **Context plugins don't work with the built-in provider yet.** [Billion Context](https://github.com/ranxianglei/billion-context) tracks each conversation by its OpenCode session ID (`ses_…`). The built-in provider sends Claude Code's own session UUID instead, so Billion Context can't link its state to the chat. `acp_status` fails with "no ACP state for this session yet" ([billion-context#7582](https://github.com/ranxianglei/billion-context/issues/7582), fix in review). Its other context tools look up sessions the same way. Routing the built-in provider through the Billion Context proxy ([billion-context#6819](https://github.com/ranxianglei/billion-context/pull/6819)) is merged but not in a stable release yet. With this plugin, requests go through OpenCode's normal provider path, where Billion Context already tags them with the OpenCode session ID, so these tools work today.
+- **The original package had a cache bug with Billion Context.** Billion Context appends a status footer to the latest message, and the footer changes every turn. The original plugin treated that as an edit to the history and replayed the whole chat into a fresh Claude session, which threw the prompt cache away. On a plan, that cost shows up directly in your usage limits. The fix is in this fork's [1.7.1 release](CHANGELOG.md).
+- **OpenChamber 2.8 removes the original package automatically.** It deletes `@openchamber/opencode-claude` from configs it manages and moves you to the built-in provider. Saved `claude-code/...` model selections don't carry over to the new provider. This fork has a different package name, so OpenChamber leaves it alone. It keeps the same provider and model IDs.
+
+**When to drop this fork:** once the built-in provider works with the context plugins you use (in our case, Billion Context's status and compression tools, across resume and fork) and those fixes are in stable releases. This fork then gets a final release saying so. Until then it tracks upstream fixes, and releases are published from CI with npm provenance through [trusted publishing](https://docs.npmjs.com/trusted-publishers), with no stored npm token.
+
 ## Terms of use: read this first
 
 Anthropic lets third-party apps use your Claude plan through the Agent SDK. Their guide, [Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), says how that usage is counted: it draws from your plan's usage limits, the same as `claude -p`. Anthropic has said the billing for third-party apps may change and that they'll announce it first, so check that page now and then.
