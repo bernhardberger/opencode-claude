@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.2 - 2026-11-23
 
 - Releases are published by CI through npm trusted publishing (GitHub OIDC)
   with provenance; no npm token is stored anywhere.
