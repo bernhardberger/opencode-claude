@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Releases are published by CI through npm trusted publishing (GitHub OIDC)
+  with provenance; no npm token is stored anywhere.
+
 ## 1.7.1 - 2026-11-23
 
 First release of the maintained fork, published as

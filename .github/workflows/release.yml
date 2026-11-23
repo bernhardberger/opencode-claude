@@ -120,20 +120,15 @@ jobs:
           git commit -m "chore: release v${VERSION}"
           git tag "v${VERSION}"
 
-      # Staged publishing: CI only uploads the release; it goes live after a
-      # maintainer approves it on npmjs.com with 2FA. NPM_TOKEN (a stage-only
-      # granular token, no 2FA bypass) is needed once, for the very first
-      # release, because trusted publishing can only be configured for a
-      # package that exists. After that, delete the secret: npm authenticates
-      # through GitHub OIDC trusted publishing (stage-only permission).
-      - name: Update npm (staged publishing needs npm 11.15+)
+      # npm trusted publishing: CI authenticates through GitHub OIDC (no npm
+      # token or repo secret) and npm signs provenance. The trusted publisher
+      # on npmjs.com allows only this repository and workflow file.
+      - name: Update npm (trusted publishing needs npm 11.5.1+)
         run: npm install -g npm@^11.15.0
 
-      - name: Stage release on npm
+      - name: Publish to npm
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: npm stage publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
       - name: Push release commit and tag
         if: ${{ github.event.inputs.dry_run != 'true' }}
