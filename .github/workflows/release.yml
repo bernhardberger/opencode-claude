@@ -10,26 +10,29 @@ on:
       bump:
         description: 'Version bump type (used if version is empty)'
         required: false
-        default: 'minor'
+        default: 'patch'
         type: choice
         options:
           - minor
           - patch
           - major
       dry_run:
-        description: 'Dry run — skip npm publish, create draft release'
+        description: 'Dry run — test, build and pack only; no publish, push or release'
         required: false
         default: false
         type: boolean
 
 env:
-  NODE_VERSION: '22'
+  # Node 24 ships npm 11, which trusted publishing (OIDC) needs.
+  NODE_VERSION: '24'
 
 permissions:
   contents: write
+  id-token: write # npm provenance and trusted publishing
 
 jobs:
   release:
+    if: github.repository == 'bernhardberger/opencode-claude'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +83,12 @@ jobs:
             require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
           "
 
+      - name: Date the Unreleased changelog section
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sed -i "0,/^## Unreleased$/s//## ${VERSION} - $(date -u +%Y-%m-%d)/" CHANGELOG.md
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
@@ -104,83 +113,41 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
+          git add package.json CHANGELOG.md
           if git ls-files --modified --others | grep -q bun.lock; then
             git add bun.lock
           fi
           git commit -m "chore: release v${VERSION}"
           git tag "v${VERSION}"
-          git push origin "v${VERSION}"
-          git push origin HEAD:main
 
+      # Uses NPM_TOKEN when it is set (needed once, for the very first publish:
+      # trusted publishing can only be configured for a package that exists).
+      # Without it, npm authenticates through GitHub OIDC trusted publishing.
       - name: Publish to npm
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Push release commit and tag
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git push origin "v${VERSION}"
+          git push origin "HEAD:${BRANCH}"
+
+      - name: Dry run package contents
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: npm pack --dry-run
+
       - name: Create GitHub Release
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           generate_release_notes: true
-          draft: ${{ github.event.inputs.dry_run == 'true' }}
           name: v${{ steps.version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Send Discord notification
-        if: ${{ github.event.inputs.dry_run != 'true' }}
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "DISCORD_WEBHOOK_URL not set; skipping Discord notification."
-            exit 0
-          fi
-          node - <<'NODE'
-          (async () => {
-            const tag = `v${process.env.VERSION}`;
-            const repo = process.env.REPOSITORY;
-            const releaseRes = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, {
-              headers: {
-                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                Accept: 'application/vnd.github+json',
-              },
-            });
-            if (!releaseRes.ok) {
-              const body = await releaseRes.text();
-              throw new Error(`Failed to fetch release ${tag}: ${releaseRes.status} ${body}`);
-            }
-            const release = await releaseRes.json();
-            const description = (release.body || `opencode-claude ${tag} released.`).slice(0, 4096);
-            const payload = {
-              username: 'opencode-claude Releases',
-              embeds: [
-                {
-                  title: release.name || `opencode-claude ${tag}`,
-                  url: release.html_url,
-                  description,
-                  color: 3447003,
-                  footer: { text: 'opencode-claude Changelog' },
-                },
-              ],
-            };
-            const discordRes = await fetch(process.env.DISCORD_WEBHOOK_URL, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify(payload),
-            });
-            if (!discordRes.ok) {
-              const body = await discordRes.text();
-              throw new Error(`Failed to send Discord notification: ${discordRes.status} ${body}`);
-            }
-            console.log('Discord notification sent successfully');
-          })().catch((error) => {
-            console.error(error);
-            process.exit(1);
-          });
-          NODE

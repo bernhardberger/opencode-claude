@@ -7,7 +7,7 @@
  * 3. Native effort variants, session resume, tools, skills, and MCP
  *
  * Register in opencode.json:
- *   { "plugins": ["@openchamber/opencode-claude"] }
+ *   { "plugins": ["@bernhardberger/opencode-claude"] }
  */
 // Type-only: the v2 host loads a plain `{ id, setup }` object, so the plugin
 // needs none of OpenCode's runtime packages.

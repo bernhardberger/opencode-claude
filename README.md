@@ -1,12 +1,15 @@
 # opencode-claude
 
-[![npm](https://img.shields.io/npm/v/%40openchamber%2Fopencode-claude?style=flat&labelColor=100F0F&color=24837B)](https://www.npmjs.com/package/@openchamber/opencode-claude)
-[![GitHub release](https://img.shields.io/github/v/release/openchamber/opencode-claude?style=flat&labelColor=100F0F&color=205EA6)](https://github.com/openchamber/opencode-claude/releases/latest)
-[![Discord](https://img.shields.io/badge/Discord-join.svg?style=flat&labelColor=100F0F&color=8B7EC8&logo=discord&logoColor=FFFCF0)](https://discord.gg/ZYRSdnwwKA)
-
-> [!IMPORTANT]
-> **This plugin is no longer needed.** OpenCode 2.2.3 and later support Claude Code natively. Switch to the built-in provider and remove `@openchamber/opencode-claude` from your config. The repository is archived; the npm package stays available for a transition period.
+[![npm](https://img.shields.io/npm/v/%40bernhardberger%2Fopencode-claude?style=flat&labelColor=100F0F&color=24837B)](https://www.npmjs.com/package/@bernhardberger/opencode-claude)
+[![GitHub release](https://img.shields.io/github/v/release/bernhardberger/opencode-claude?style=flat&labelColor=100F0F&color=205EA6)](https://github.com/bernhardberger/opencode-claude/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-black?style=flat&labelColor=100F0F&color=EC8B49)](LICENSE)
+
+> [!NOTE]
+> **This is a maintained fork** of [`@openchamber/opencode-claude`](https://github.com/openchamber/opencode-claude), which is archived. OpenChamber 2.8 also removes the original package from managed configs automatically.
+>
+> OpenCode now has a built-in Claude Code provider. This fork stays alive until that provider covers everything this plugin does, including working with context-management plugins such as [Billion Context](https://github.com/ranxianglei/billion-context). If the built-in provider already does what you need, use it instead.
+>
+> To switch from the original, replace `@openchamber/opencode-claude` with `@bernhardberger/opencode-claude` in `plugins`. The provider ID (`claude-code`) and model IDs are unchanged, so saved model selections keep working. Fork changes are in the [changelog](CHANGELOG.md).
 
 Use your Claude Pro or Max plan in [OpenCode](https://opencode.ai) and [OpenChamber](https://github.com/openchamber/openchamber).
 
@@ -57,13 +60,13 @@ You need [OpenCode](https://opencode.ai) 2.x and the [Claude Code CLI](https://w
 1. Add the plugin:
 
    ```bash
-   opencode plugin add @openchamber/opencode-claude
+   opencode plugin add @bernhardberger/opencode-claude
    ```
 
    Or add it to `~/.config/opencode/opencode.json` yourself:
 
    ```json
-   { "plugins": ["@openchamber/opencode-claude"] }
+   { "plugins": ["@bernhardberger/opencode-claude"] }
    ```
 
 2. Sign in. If you already use Claude Code in a terminal, you're probably signed in. Check with `claude auth status`. Otherwise:
@@ -103,13 +106,13 @@ CLAUDE_CONFIG_DIR=~/.claude-work claude auth login --claudeai
 ```
 
 ```json
-{ "plugins": [{ "package": "@openchamber/opencode-claude", "options": { "configDirs": { "~/work": "~/.claude-work" } } }] }
+{ "plugins": [{ "package": "@bernhardberger/opencode-claude", "options": { "configDirs": { "~/work": "~/.claude-work" } } }] }
 ```
 
 **Compacting earlier.** On 1M models OpenCode compacts a chat near 850K tokens, and every step of a long chat re-reads all of it. To compact sooner, set `compactAt` in the plugin options; Claude still has its full window for a turn that runs over:
 
 ```json
-{ "plugins": [{ "package": "@openchamber/opencode-claude", "options": { "compactAt": 400000 } }] }
+{ "plugins": [{ "package": "@bernhardberger/opencode-claude", "options": { "compactAt": 400000 } }] }
 ```
 
 **Model fallback.** If Claude Code declines a request on one model and retries on another (for example Fable to Opus), you'll see a note in the reasoning, and the session switches to the model that's actually answering.
@@ -127,17 +130,17 @@ Your plan's limits go mostly to context: each step of an agent loop re-reads the
 
 | What you see | What to do |
 | --- | --- |
-| No Claude Code provider in OpenCode | Check that `plugins` in `opencode.json` includes `@openchamber/opencode-claude`, then restart OpenCode |
+| No Claude Code provider in OpenCode | Check that `plugins` in `opencode.json` includes `@bernhardberger/opencode-claude`, then restart OpenCode |
 | Authentication error | Run `claude auth status`. If you're signed out or on an API key, run `claude auth login --claudeai` |
 | `claude` works with my company API key in the terminal but not in OpenCode | The plugin only runs on a Claude plan. With an API key or a company gateway you don't need this plugin at all: use OpenCode's built-in Anthropic provider |
 | "Model unavailable" on an old session | The model ids changed in 1.1. Pick the model again in that session |
 | A rate-limit error with a reset time | Your plan's limit was reached. It clears at the reset time, or on your next message if you reset your limits early |
-| Something else | Turn on the debug log (below) and share it in an issue or on Discord |
+| Something else | Turn on the debug log (below) and share it in an issue |
 
 **Debug log.** Add `"options": { "debug": true }` to the plugin entry:
 
 ```json
-{ "plugins": [{ "package": "@openchamber/opencode-claude", "options": { "debug": true } }] }
+{ "plugins": [{ "package": "@bernhardberger/opencode-claude", "options": { "debug": true } }] }
 ```
 
 The log goes to `~/.local/share/opencode-claude/debug.log`. It records one line per turn with token usage (steps, context per step, cache reads and writes), which is the quickest way to see where your limits go.
@@ -169,7 +172,7 @@ To try a local build, point `plugins` at the checkout folder: `{ "plugins": ["/p
 
 Releases are cut with the **Release** workflow in GitHub Actions. It bumps the version, runs the tests, tags, and publishes to npm.
 
-Issues and pull requests are welcome at [openchamber/opencode-claude](https://github.com/openchamber/opencode-claude). Sibling plugins: [opencode-cursor](https://github.com/openchamber/opencode-cursor) and [opencode-commandcode](https://github.com/openchamber/opencode-commandcode).
+Issues and pull requests are welcome at [bernhardberger/opencode-claude](https://github.com/bernhardberger/opencode-claude). Sibling plugins: [opencode-cursor](https://github.com/openchamber/opencode-cursor) and [opencode-commandcode](https://github.com/openchamber/opencode-commandcode).
 
 ## License
 

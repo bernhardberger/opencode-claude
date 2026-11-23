@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+First release of the maintained fork, published as
+`@bernhardberger/opencode-claude`. Replace `@openchamber/opencode-claude` with
+it in `plugins`; the provider and model IDs are unchanged.
+
+- **Billion Context status footer no longer restarts the Claude session**:
+  Billion Context appends a status line to your latest message, and it changes
+  every turn. The plugin read that as an edit to your earlier messages and
+  replayed the whole chat into a fresh Claude session, which threw away the
+  prompt cache. The footer is now left out when checking for edits; Claude
+  still sees it.
+
 ## 1.7.0 - 2026-10-30
 
 - **Background compaction works with Claude**: with OpenCode's
