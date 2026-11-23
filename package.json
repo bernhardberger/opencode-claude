@@ -1,6 +1,6 @@
 {
   "name": "@bernhardberger/opencode-claude",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Claude Code in OpenCode (maintained fork of @openchamber/opencode-claude) — local CLI auth, Agent SDK harness, effort variants, tools/MCP, images & compact.",
   "license": "MIT",
   "type": "module",

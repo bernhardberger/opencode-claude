@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.1 - 2026-11-23
 
 First release of the maintained fork, published as
 `@bernhardberger/opencode-claude`. Replace `@openchamber/opencode-claude` with
